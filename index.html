@@ -1,16 +1,50 @@
 <!DOCTYPE html>
-<html lang="hu">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird Játék</title>
+    <title>Flappy Bird</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div id="score">Pontszám: 0</div>
+    <div id="mainMenu" class="menu-screen">
+        <h1>Flappy Bird</h1>
+        <div class="menu-buttons">
+            <button id="playButton" class="menu-button">Play Game</button>
+            <button id="leaderboardButton" class="menu-button">Leaderboard</button>
+            <button id="settingsButton" class="menu-button">Settings</button>
+        </div>
     </div>
+
+    <div id="gameContainer" class="game-container" style="display: none;">
+        <div id="score">Pontszám: 0</div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="leaderboardScreen" class="menu-screen" style="display: none;">
+        <h2>Leaderboard</h2>
+        <div id="leaderboardList"></div>
+        <button class="menu-button back-button">Back to Menu</button>
+    </div>
+
+    <div id="settingsScreen" class="menu-screen" style="display: none;">
+        <h2>Settings</h2>
+        <div class="settings-options">
+            <div class="setting-item">
+                <label>Sound Effects</label>
+                <input type="checkbox" id="soundEffects" checked>
+            </div>
+            <div class="setting-item">
+                <label>Difficulty</label>
+                <select id="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+        </div>
+        <button class="menu-button back-button">Back to Menu</button>
+    </div>
+
     <script src="scripts/game.js"></script>
+    <script src="scripts/menu.js"></script>
 </body>
 </html>

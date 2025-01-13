@@ -183,6 +183,10 @@ function resetGame() {
     gameStarted = false;
     gameOver = false;
     document.getElementById('score').textContent = `Pontszám: ${score}`;
+    
+    if (score > 0) {
+        gameMenu.updateLeaderboard(score);
+    }
 }
 
 // Madár rajzolása
@@ -264,6 +268,9 @@ function gameLoop() {
         // Ütközés ellenőrzése
         if (checkCollision()) {
             gameOver = true;
+            if (score > 0) {
+                gameMenu.updateLeaderboard(score);
+            }
         }
     }
 

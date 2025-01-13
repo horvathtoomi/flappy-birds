@@ -10,6 +10,7 @@ let scale = 1;
 // Játék állapot
 let gameStarted = false;
 let gameOver = false;
+let gameLoopRunning = false;  // Új változó a játékciklus állapotához
 
 // Alapvető játék változók
 const gravity = 0.5;
@@ -17,24 +18,24 @@ const jumpForce = -8;
 
 // Madár objektum
 const bird = {
-    x: GAME_WIDTH / 4,  // Position bird at 1/4 of screen width
+    x: GAME_WIDTH / 4,
     y: GAME_HEIGHT / 2,
     velocity: 0,
-    width: 68,    // Double the size for larger resolution
-    height: 48    // Double the size for larger resolution
+    width: 68,
+    height: 48
 };
 
 // Cső beállítások
-const PIPE_SPACING = 600;    // Increased spacing between pipes
-const PIPE_GAP = 300;       // Increased vertical gap
-const PIPE_WIDTH = 104;     // Double the pipe width
-const PIPE_SPEED = 4;       // Slightly faster speed for larger screen
+const PIPE_SPACING = 600;
+const PIPE_GAP = 300;
+const PIPE_WIDTH = 104;
+const PIPE_SPEED = 4;
 
 // Csövek tömbje és pontszám
 let pipes = [];
 let score = 0;
 
-// Add near the top with other constants
+// Sprite-ok betöltése
 const birdSprite = new Image();
 birdSprite.src = 'assets/images/bird.png';
 const pipeSprite = new Image();
@@ -43,7 +44,7 @@ const backgroundSprite = new Image();
 backgroundSprite.src = 'assets/images/background.png';
 let backgroundX = 0;
 
-// Add this function to handle resizing
+// Canvas átméretezés kezelése
 function resizeCanvas() {
     canvas.width = GAME_WIDTH;
     canvas.height = GAME_HEIGHT;
@@ -51,23 +52,17 @@ function resizeCanvas() {
 
 // Játék inicializálása
 function init() {
-    // Set initial canvas size
     resizeCanvas();
     
-    // Add resize event listener
     window.addEventListener('resize', resizeCanvas);
     
-    // Wait for images to load before starting
     Promise.all([
         new Promise(resolve => birdSprite.onload = resolve),
         new Promise(resolve => pipeSprite.onload = resolve),
         new Promise(resolve => backgroundSprite.onload = resolve)
     ]).then(() => {
-        // Add event listeners
         document.addEventListener('keydown', handleJump);
         document.addEventListener('click', handleJump);
-        
-        // Start game loop
         gameLoop();
     }).catch(error => {
         console.error('Error loading game assets:', error);
@@ -77,9 +72,7 @@ function init() {
 // Ugrás kezelése
 function handleJump(event) {
     if (event.type === 'click') {
-        // Get canvas bounds
         const rect = canvas.getBoundingClientRect();
-        // Check if click is within scaled canvas bounds
         const clickX = (event.clientX - rect.left) / scale;
         const clickY = (event.clientY - rect.top) / scale;
         if (clickX < 0 || clickX > GAME_WIDTH || clickY < 0 || clickY > GAME_HEIGHT) {
@@ -112,23 +105,19 @@ function createPipe() {
 
 // Csövek frissítése
 function updatePipes() {
-    // Új cső hozzáadása, ha szükséges
     if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - PIPE_SPACING) {
         pipes.push(createPipe());
     }
 
-    // Csövek mozgatása és törlése
     for (let i = pipes.length - 1; i >= 0; i--) {
         pipes[i].x -= PIPE_SPEED;
 
-        // Pontszám növelése, ha a madár átment a csövön
         if (!pipes[i].passed && bird.x > pipes[i].x + PIPE_WIDTH) {
             pipes[i].passed = true;
             score++;
             document.getElementById('score').textContent = `Pontszám: ${score}`;
         }
 
-        // Cső törlése, ha kiért a képernyőből
         if (pipes[i].x + PIPE_WIDTH < 0) {
             pipes.splice(i, 1);
         }
@@ -137,12 +126,10 @@ function updatePipes() {
 
 // Ütközés ellenőrzése
 function checkCollision() {
-    // Ütközés a földdel vagy a plafonnal
     if (bird.y < 0 || bird.y + bird.height > canvas.height) {
         return true;
     }
 
-    // Ütközés a csövekkel
     for (const pipe of pipes) {
         if (bird.x + bird.width > pipe.x && bird.x < pipe.x + PIPE_WIDTH) {
             if (bird.y < pipe.gapStart || bird.y + bird.height > pipe.gapEnd) {
@@ -156,14 +143,12 @@ function checkCollision() {
 // Csövek rajzolása
 function drawPipes() {
     for (const pipe of pipes) {
-        // Upper pipe (flipped)
         ctx.save();
         ctx.translate(pipe.x, pipe.gapStart);
-        ctx.scale(1, -1);  // Flip the image vertically
+        ctx.scale(1, -1);
         ctx.drawImage(pipeSprite, 0, 0, PIPE_WIDTH, pipe.gapStart);
         ctx.restore();
         
-        // Lower pipe
         ctx.drawImage(
             pipeSprite,
             pipe.x,
@@ -174,31 +159,12 @@ function drawPipes() {
     }
 }
 
-// Játék újraindítása
-function resetGame() {
-    bird.y = canvas.height / 2;
-    bird.velocity = 0;
-    pipes = [];
-    score = 0;
-    gameStarted = false;
-    gameOver = false;
-    document.getElementById('score').textContent = `Pontszám: ${score}`;
-    
-    if (score > 0) {
-        gameMenu.updateLeaderboard(score);
-    }
-}
-
 // Madár rajzolása
 function drawBird() {
     ctx.save();
     ctx.translate(bird.x + bird.width/2, bird.y + bird.height/2);
-    
-    // Add rotation based on velocity (makes bird tilt up/down)
     const rotation = Math.min(Math.max(bird.velocity * 0.1, -0.5), 0.5);
     ctx.rotate(rotation);
-    
-    // Draw the bird sprite instead of a rectangle
     ctx.drawImage(
         birdSprite,
         -bird.width/2,
@@ -206,7 +172,6 @@ function drawBird() {
         bird.width,
         bird.height
     );
-    
     ctx.restore();
 }
 
@@ -221,72 +186,110 @@ function drawGameOver() {
     ctx.fillText('Játék Vége!', canvas.width / 2, canvas.height / 2);
     
     ctx.font = '24px Arial';
-    ctx.fillText('Kattints az újraindításhoz', canvas.width / 2, canvas.height / 2 + 40);
     ctx.fillText(`Végső pontszám: ${score}`, canvas.width / 2, canvas.height / 2 + 80);
 }
 
-// Kezdőképernyő rajzolása
-function drawStartScreen() {
-    ctx.fillStyle = 'white';
-    ctx.font = '36px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Kattints a kezdéshez!', canvas.width / 2, canvas.height / 2);
-}
-
-// Add new function to draw the scrolling background
+// Háttér rajzolása
 function drawBackground() {
-    // Draw two copies of the background side by side
     ctx.drawImage(backgroundSprite, backgroundX, 0, canvas.width, canvas.height);
     ctx.drawImage(backgroundSprite, backgroundX + canvas.width, 0, canvas.width, canvas.height);
     
-    // Move the background to create scrolling effect
     if (gameStarted && !gameOver) {
-        backgroundX -= 2; // Adjust speed as needed
-        // Reset position when first image moves completely off screen
+        backgroundX -= 2;
         if (backgroundX <= -canvas.width) {
             backgroundX = 0;
         }
     }
 }
 
+// Új függvény: Game Over gombok létrehozása
+function createGameOverButtons() {
+    const existingButtons = document.querySelector('.game-over-buttons');
+    if (existingButtons) {
+        existingButtons.remove();
+    }
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'game-over-buttons';
+
+    const playAgainButton = document.createElement('button');
+    playAgainButton.className = 'game-over-button';
+    playAgainButton.textContent = 'Play Again';
+    playAgainButton.onclick = () => {
+        buttonContainer.remove();
+        resetGame();
+    };
+
+    const leaderboardButton = document.createElement('button');
+    leaderboardButton.className = 'game-over-button leaderboard';
+    leaderboardButton.textContent = 'Leaderboard';
+    leaderboardButton.onclick = () => {
+        if (window.gameMenu) {
+            window.gameMenu.saveScore(score);
+            window.gameMenu.showScreen('leaderboard');
+        }
+    };
+
+    buttonContainer.appendChild(playAgainButton);
+    buttonContainer.appendChild(leaderboardButton);
+    document.getElementById('gameContainer').appendChild(buttonContainer);
+}
+
 // Játék loop
 function gameLoop() {
-    // Képernyő tisztítása
+    if (!gameLoopRunning) return;
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw background first
+    
     drawBackground();
-
-    if (gameStarted && !gameOver) {
-        // Madár mozgatása
-        bird.velocity += gravity;
-        bird.y += bird.velocity;
-
-        // Csövek frissítése
+    
+    if (gameStarted) {
         updatePipes();
-
-        // Ütközés ellenőrzése
+        updateBird();
+        
         if (checkCollision()) {
             gameOver = true;
-            if (score > 0) {
-                gameMenu.updateLeaderboard(score);
-            }
+            gameLoopRunning = false;
+            createGameOverButtons();  // Az új gombok létrehozása
+            return;
         }
     }
-
-    // Játékelemek rajzolása
+    
     drawPipes();
     drawBird();
-
-    // Kezdőképernyő vagy játék vége képernyő megjelenítése
-    if (!gameStarted) {
-        drawStartScreen();
-    } else if (gameOver) {
-        drawGameOver();
-    }
-
-    // Következő frame kérése
+    
     requestAnimationFrame(gameLoop);
+}
+
+// Madár frissítése
+function updateBird() {
+    bird.velocity += gravity;
+    bird.y += bird.velocity;
+}
+
+// Játék újraindítása
+function resetGame() {
+    const existingButtons = document.querySelector('.game-over-buttons');
+    if (existingButtons) {
+        existingButtons.remove();
+    }
+    
+    gameOver = false;
+    gameStarted = false;
+    score = 0;
+    gameLoopRunning = true;
+    
+    bird.x = GAME_WIDTH / 4;
+    bird.y = GAME_HEIGHT / 2;
+    bird.velocity = 0;
+    
+    pipes = [];
+    
+    document.getElementById('score').textContent = 'Pontszám: 0';
+    
+    backgroundX = 0;
+    
+    gameLoop();
 }
 
 // Játék indítása

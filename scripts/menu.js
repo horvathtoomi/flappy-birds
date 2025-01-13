@@ -15,14 +15,14 @@ class GameMenu {
         const playButton = document.getElementById('playButton');
         const leaderboardButton = document.getElementById('leaderboardButton');
         const settingsButton = document.getElementById('settingsButton');
-        
+
         if (playButton) {
             playButton.addEventListener('click', () => {
                 this.showScreen('game');
-                // Start new game
-                if (typeof resetGame === 'function') {
-                    resetGame();
-                }
+                // Először állítsuk be a canvas méretét
+                resizeCanvas();
+                // Aztán indítsuk újra a játékot
+                resetGame();
             });
         }
 

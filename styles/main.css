@@ -160,6 +160,42 @@ h1 {
     background-color: #F57C00;
 }
 
+/* Új Game Over gombok stílusai */
+.game-over-buttons {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 20px;
+    z-index: 100;
+}
+
+.game-over-button {
+    background-color: #4CAF50;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 25px;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.game-over-button:hover {
+    transform: scale(1.05);
+    background-color: #45a049;
+}
+
+.game-over-button.leaderboard {
+    background-color: #2196F3;
+}
+
+.game-over-button.leaderboard:hover {
+    background-color: #1976D2;
+}
+
 @media (max-width: 768px) {
     .menu-button {
         padding: 12px 30px;
@@ -179,5 +215,17 @@ h1 {
     
     h1 {
         margin-bottom: 15px;
+    }
+}
+
+/* Animációk */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
     }
 }

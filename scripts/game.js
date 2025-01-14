@@ -16,6 +16,13 @@ let gameLoopRunning = false;  // Új változó a játékciklus állapotához
 const gravity = 0.5;
 const jumpForce = -8;
 
+// Nehézségi szint módosítók
+const DIFFICULTY_MODIFIERS = {
+    easy: 0.8,
+    normal: 1,
+    hard: 1.25
+};
+
 // Madár objektum
 const bird = {
     x: GAME_WIDTH / 4,
@@ -43,6 +50,12 @@ pipeSprite.src = 'assets/images/pipe.png';
 const backgroundSprite = new Image();
 backgroundSprite.src = 'assets/images/background.png';
 let backgroundX = 0;
+
+// Nehézségi szint lekérdezése
+function getDifficultyModifier() {
+    const difficulty = localStorage.getItem('gameDifficulty') || 'normal';
+    return DIFFICULTY_MODIFIERS[difficulty];
+}
 
 // Canvas átméretezés kezelése
 function resizeCanvas() {
@@ -87,7 +100,8 @@ function handleJump(event) {
             if (!gameStarted) {
                 gameStarted = true;
             }
-            bird.velocity = jumpForce;
+            const difficultyModifier = getDifficultyModifier();
+            bird.velocity = jumpForce * difficultyModifier;
         }
     }
 }
@@ -115,7 +129,8 @@ function updatePipes() {
         if (!pipes[i].passed && bird.x > pipes[i].x + PIPE_WIDTH) {
             pipes[i].passed = true;
             score++;
-            document.getElementById('score').textContent = `Pontszám: ${score}`;
+            const difficulty = localStorage.getItem('gameDifficulty') || 'normal';
+            document.getElementById('score').textContent = `Score: ${score} (${difficulty})`;
         }
 
         if (pipes[i].x + PIPE_WIDTH < 0) {
@@ -186,7 +201,8 @@ function drawGameOver() {
     ctx.fillText('Játék Vége!', canvas.width / 2, canvas.height / 2);
     
     ctx.font = '24px Arial';
-    ctx.fillText(`Végső pontszám: ${score}`, canvas.width / 2, canvas.height / 2 + 80);
+    const difficulty = localStorage.getItem('gameDifficulty') || 'normal';
+    ctx.fillText(`Final Score: ${score} (${difficulty})`, canvas.width / 2, canvas.height / 2 + 80);
 }
 
 // Háttér rajzolása
@@ -202,7 +218,7 @@ function drawBackground() {
     }
 }
 
-// Új függvény: Game Over gombok létrehozása
+// Game Over gombok létrehozása
 function createGameOverButtons() {
     const existingButtons = document.querySelector('.game-over-buttons');
     if (existingButtons) {
@@ -250,7 +266,7 @@ function gameLoop() {
         if (checkCollision()) {
             gameOver = true;
             gameLoopRunning = false;
-            createGameOverButtons();  // Az új gombok létrehozása
+            createGameOverButtons();
             return;
         }
     }
@@ -263,8 +279,9 @@ function gameLoop() {
 
 // Madár frissítése
 function updateBird() {
-    bird.velocity += gravity;
-    bird.y += bird.velocity;
+    const difficultyModifier = getDifficultyModifier();
+    bird.velocity += gravity * difficultyModifier;
+    bird.y += bird.velocity * difficultyModifier;
 }
 
 // Játék újraindítása
@@ -285,7 +302,8 @@ function resetGame() {
     
     pipes = [];
     
-    document.getElementById('score').textContent = 'Pontszám: 0';
+    const difficulty = localStorage.getItem('gameDifficulty') || 'normal';
+    document.getElementById('score').textContent = `Score: 0 (${difficulty})`;
     
     backgroundX = 0;
     

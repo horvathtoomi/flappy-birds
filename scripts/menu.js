@@ -6,8 +6,29 @@ class GameMenu {
         this.leaderboardScreen = document.getElementById('leaderboardScreen');
         this.settingsScreen = document.getElementById('settingsScreen');
         
+        // Initialize game counter
+        this.initializeGameCount();
+        
         // Initialize button listeners
         this.initializeEventListeners();
+    }
+
+    initializeGameCount() {
+        // Initialize games played counter if it doesn't exist
+        if (!localStorage.getItem('gamesPlayed')) {
+            localStorage.setItem('gamesPlayed', '0');
+        }
+        // Initialize default difficulty if it doesn't exist
+        if (!localStorage.getItem('gameDifficulty')) {
+            localStorage.setItem('gameDifficulty', 'normal');
+        }
+    }
+
+    incrementGameCount() {
+        const currentCount = parseInt(localStorage.getItem('gamesPlayed') || '0');
+        const newCount = currentCount + 1;
+        localStorage.setItem('gamesPlayed', newCount.toString());
+        return newCount;
     }
 
     initializeEventListeners() {
@@ -36,6 +57,24 @@ class GameMenu {
         if (settingsButton) {
             settingsButton.addEventListener('click', () => {
                 this.showScreen('settings');
+            });
+        }
+
+        // Difficulty selector kezelése
+        const difficultySelector = document.getElementById('difficulty');
+        if (difficultySelector) {
+            // Beállítjuk a korábban kiválasztott nehézségi szintet
+            const savedDifficulty = localStorage.getItem('gameDifficulty') || 'normal';
+            difficultySelector.value = savedDifficulty;
+
+            // Figyeljük a változásokat
+            difficultySelector.addEventListener('change', () => {
+                const selectedDifficulty = difficultySelector.value;
+                localStorage.setItem('gameDifficulty', selectedDifficulty);
+                // Ha van aktív játék, újraindítjuk az új nehézségi szinttel
+                if (window.resetGame) {
+                    window.resetGame();
+                }
             });
         }
 
@@ -84,21 +123,43 @@ class GameMenu {
                 .slice(0, 10)
                 .map((score, index) => `
                     <div class="score-entry">
-                        ${index + 1}. ${score.name || 'Anonymous'}: ${score.score}
+                        ${index + 1}. ${score.name}: ${score.score} (${score.difficulty || 'normal'})
                     </div>
                 `).join('');
         }
     }
 
     saveScore(score) {
+        // Get and increment the game count
+        const gameNumber = this.incrementGameCount();
+        
+        // Generate player name based on game number
+        const playerName = `Player${gameNumber}`;
+        
+        // Get current difficulty
+        const difficulty = localStorage.getItem('gameDifficulty') || 'normal';
+        
+        // Get existing leaderboard or create empty array if none exists
         const leaderboard = JSON.parse(localStorage.getItem('leaderboard') || '[]');
-        const playerName = prompt('Enter your name for the leaderboard:') || 'Anonymous';
-        leaderboard.push({ name: playerName, score: score });
+        
+        // Add new score with automatically generated name and difficulty
+        leaderboard.push({
+            name: playerName,
+            score: score,
+            gameNumber: gameNumber,
+            difficulty: difficulty,
+            date: new Date().toISOString()
+        });
+        
+        // Save updated leaderboard back to localStorage
         localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+        
+        // Update the leaderboard display if it's visible
+        this.updateLeaderboardDisplay();
     }
 }
 
 // Create instance of GameMenu when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.gameMenu = new GameMenu();
-}); 
+});

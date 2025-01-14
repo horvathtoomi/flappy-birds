@@ -10,7 +10,7 @@ let scale = 1;
 // Játék állapot
 let gameStarted = false;
 let gameOver = false;
-let gameLoopRunning = false;  // Új változó a játékciklus állapotához
+let gameLoopRunning = false;
 
 // Alapvető játék változók
 const gravity = 0.5;
@@ -22,6 +22,36 @@ const DIFFICULTY_MODIFIERS = {
     normal: 1,
     hard: 1.25
 };
+
+// Hang effektek betöltése
+const jumpSound = new Audio('assets/sounds/jump.wav');
+const lobbyMusic = new Audio('assets/sounds/lobby.wav');
+const pointsSound = new Audio('assets/sounds/points.wav');
+
+// Lobby zene beállításai
+lobbyMusic.loop = true;
+lobbyMusic.volume = 0.5;  // A háttérzene halkabb legyen
+
+// Hangok lejátszása
+function playSound(sound) {
+    if (localStorage.getItem('soundEffects') === 'true') {
+        // Ha a hang már játszódik, állítsuk le és indítsuk újra
+        sound.currentTime = 0;
+        sound.play().catch(error => console.error('Error playing sound:', error));
+    }
+}
+
+// Lobby zene kezelése
+function handleLobbyMusic(action) {
+    if (localStorage.getItem('soundEffects') === 'true') {
+        if (action === 'play') {
+            lobbyMusic.play().catch(error => console.error('Error playing lobby music:', error));
+        } else if (action === 'stop') {
+            lobbyMusic.pause();
+            lobbyMusic.currentTime = 0;
+        }
+    }
+}
 
 // Madár objektum
 const bird = {
@@ -76,6 +106,7 @@ function init() {
     ]).then(() => {
         document.addEventListener('keydown', handleJump);
         document.addEventListener('click', handleJump);
+        handleLobbyMusic('play');  // Indítsuk a lobby zenét
         gameLoop();
     }).catch(error => {
         console.error('Error loading game assets:', error);
@@ -99,9 +130,11 @@ function handleJump(event) {
         } else {
             if (!gameStarted) {
                 gameStarted = true;
+                handleLobbyMusic('stop');  // Állítsuk le a lobby zenét amikor kezdődik a játék
             }
             const difficultyModifier = getDifficultyModifier();
             bird.velocity = jumpForce * difficultyModifier;
+            playSound(jumpSound);  // Játsszuk le az ugrás hangot
         }
     }
 }
@@ -129,6 +162,10 @@ function updatePipes() {
         if (!pipes[i].passed && bird.x > pipes[i].x + PIPE_WIDTH) {
             pipes[i].passed = true;
             score++;
+            // Ellenőrizzük, hogy 10-zel osztható-e a pontszám (kivéve 0)
+            if (score > 0 && score % 10 === 0) {
+                playSound(pointsSound);
+            }
             const difficulty = localStorage.getItem('gameDifficulty') || 'normal';
             document.getElementById('score').textContent = `Score: ${score} (${difficulty})`;
         }
@@ -243,6 +280,7 @@ function createGameOverButtons() {
         if (window.gameMenu) {
             window.gameMenu.saveScore(score);
             window.gameMenu.showScreen('leaderboard');
+            handleLobbyMusic('play');  // Indítsuk újra a lobby zenét
         }
     };
 
@@ -267,6 +305,7 @@ function gameLoop() {
             gameOver = true;
             gameLoopRunning = false;
             createGameOverButtons();
+            handleLobbyMusic('play');  // Játék vége után indítsuk újra a lobby zenét
             return;
         }
     }
@@ -307,6 +346,7 @@ function resetGame() {
     
     backgroundX = 0;
     
+    handleLobbyMusic('play');  // Új játék kezdetekor indítsuk a lobby zenét
     gameLoop();
 }
 
